@@ -35,7 +35,7 @@ function exported(schedule, course) {
   return result;
 }
 
-exports.save = (e, editing) => {
+exports.save = (e, editing, forcedId) => {
   const body = e.requestInfo().body;
   const owner = e.auth.id;
   let result;
@@ -43,11 +43,12 @@ exports.save = (e, editing) => {
     const schedule = editing
       ? app.findRecordById("jadwal", e.request.pathValue("id"))
       : new Record(app.findCollectionByNameOrId("jadwal"));
+    if (!editing && forcedId) schedule.id = forcedId;
     const course = editing ? ownCourse(app, schedule, owner)
       : new Record(app.findCollectionByNameOrId("mata_kuliah"));
     const name = String(body.nama || "").trim();
     const lecturer = String(body.dosen || "").trim();
-    if (!name || !lecturer || !Number.isInteger(body.sks) || body.sks < 1 || body.sks > 6) {
+    if (!name || !lecturer || !Number.isInteger(body.sks) || body.sks < 1 || body.sks > 10) {
       fail("invalid_schedule", "Nama, dosen, dan SKS wajib diisi dengan benar.");
     }
     for (const field of ["hari", "jam_mulai", "jam_selesai", "menit_sebelum"]) {
@@ -89,6 +90,8 @@ exports.validateRequest = (e) => {
   if (!e.auth) throw new UnauthorizedError();
   e.app.runInTransaction((app) => {
     e.app = app;
+    const tombstones = app.findRecordsByFilter("jadwalin_sync_deleted", "entity = {:id}", "", 1, 0, {id: e.record.id});
+    if (tombstones.length) fail("schedule_deleted", "Jadwal sudah dihapus.");
     validate(app, e.record, e.auth.id);
     e.next();
   });

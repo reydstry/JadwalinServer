@@ -57,7 +57,7 @@ migrate((app) => {
     "help": "",
     "hidden": false,
     "id": "number3874725361",
-    "max": 6,
+    "max": 10,
     "min": 1,
     "name": "sks",
     "onlyInt": true,

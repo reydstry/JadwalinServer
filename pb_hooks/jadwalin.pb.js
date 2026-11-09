@@ -36,3 +36,14 @@ cronAdd("jadwalin_email_code_cleanup", "*/15 * * * *", () => {
     {cutoff: Date.now() - 86400000});
   for (const record of expired) $app.delete(record);
 });
+
+routerAdd("GET", "/api/jadwalin/sync", (e) => {
+  return require(__hooks + "/jadwalin_sync.js").pull(e);
+}, $apis.requireAuth("users"));
+routerAdd("POST", "/api/jadwalin/sync", (e) => {
+  return require(__hooks + "/jadwalin_sync.js").push(e);
+}, $apis.requireAuth("users"), $apis.bodyLimit(16384));
+// Model hook also covers old endpoints, collection APIs, and administrative deletes.
+onRecordDelete((e) => {
+  return require(__hooks + "/jadwalin_sync.js").deleted(e);
+}, "jadwal");
